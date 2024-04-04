@@ -1,0 +1,103 @@
+# dependencies
+#	python2-pdfminer
+#	calibre
+# 	xpdf
+
+pdfminerPath="/usr/bin/pdf2txt.py-2"
+htmlToEpub="ebook-convert"
+debugMode=1
+
+function printusage ()
+{
+	echo "Usage: $0 <pdf name>"
+}
+
+function debugMsg()
+{
+	if [ $debugMode != 0 ]; then
+		logMsg "$1"
+	fi
+}
+
+function logMsg()
+{
+	echo $1
+}
+
+function pdfMiner()
+{
+	logMsg "Starting pdfminer processing"
+	
+	# Produce html output
+	logMsg "Producing html output"
+	htmlFileName="$fileName.pdfminer.html"
+	"$pdfminerPath" -o "$htmlFileName" "$inputFile"
+
+	# Produce text output
+	logMsg "Producing txt output"
+	"$pdfminerPath" -o "$fileName.pdfminer.txt" "$inputFile"
+
+	# Produce epub output
+	logMsg "Producing epub output"
+	epubFileName=fileName.pdfminer.epub
+	"$htmlToEpub" "$htmlFileName" "$epubFileName" &>/dev/null
+	ebook-viewer "$epubFileName"
+
+	logMsg "Finished pdfminer processing"
+}
+
+function xpdf()
+{
+	logMsg "\nStarting xpdf processing"
+	
+	# Produce html output
+	logMsg "Producing html output"
+	pdftohtml "$inputFile" "$fileName.xpdf" &>/dev/null
+
+	# Produce text output
+	logMsg "Producing txt output"
+	pdftotext "$inputFile" "$fileName.xpdf.txt" &>/dev/null
+
+	# Produce epub output
+	logMsg "Producing epub output"
+	epubFileName=fileName.xpdf.epub
+	"$htmlToEpub" "$fileName.xpdf.html" "$epubFileName" &>/dev/null
+	ebook-viewer "$epubFileName"
+
+	logMsg "Finished xpdf processing"
+}
+
+function calibre()
+{
+	logMsg "\nStarting calibre processing"
+	
+	# Produce text output
+	logMsg "Producing txt output"
+	ebook-convert "$inputFile" "$fileName.calibre.txt" &>/dev/null
+
+	# Produce epub output
+	logMsg "Producing epub output"
+	epubFileName=$fileName.calibre.epub
+	ebook-convert "$inputFile" "$epubFileName" &>/dev/null
+	ebook-viewer "$epubFileName"
+
+	logMsg "Finished calibre processing"
+}
+
+## *** Execution starts here ***
+
+# Validate input
+if [ -z "$1" ]; then
+	printusage
+	exit
+else
+	inputFile=$1
+	#pdfminerOutput=$(echo $1 | sed s/\\.pdf/\\.html/)
+	fileName=$(echo $1 | sed s/\\.pdf//)
+	debugMsg "input file is $inputFile"
+	debugMsg "File name is $fileName"
+fi
+
+pdfMiner
+xpdf
+calibre

@@ -1,0 +1,98 @@
+#smartFile=/tmp/smartOutput.txt
+VERBOSITY=5
+
+function printSection()
+{
+	echo >> $outFile
+	echo "*** $2 ***" >> $outFile
+	echo >> $outFile
+	echo "$1" >> $outFile
+}
+
+function printLine()
+{
+	echo "$1" >> $outFile
+}
+
+function debugMessage()
+{
+	if (( VERBOSITY > 0 )); then
+		echo "$1"
+	fi
+}
+
+if [ -z "$1" ] ; then
+	echo
+	echo "Usage: $0 <device path>"
+	echo
+	exit;
+fi
+
+
+# Check if the device is up
+if ! ls $1 > /dev/null 2>&1; then
+	echo
+	echo "The device $1 doesn't exist"
+	echo
+	lsblk
+	exit;
+fi
+
+# Check if we can read the drive
+DRIVE_INFO=$(smartctl -i $1)
+if [ -z "$DRIVE_INFO" ] || [[ "$DRIVE_INFO" == *Permission\ denied* ]]; then
+	echo
+	echo "Unable to read the drive"
+	echo
+	echo "$DRIVE_INFO"
+	exit
+fi
+
+# Get the serial number and model number
+DRIVE_INFO=$(smartctl -i $1)
+serial=$(echo "$DRIVE_INFO" | grep "Serial Number" | grep -o ":.*" | sed "s/: *//" | tr " " _ )
+debugMessage "Serial is $serial"
+model=$(echo "$DRIVE_INFO" | grep "Device Model" | grep -o ":.*" | sed "s/: *//" | tr " " _ )
+debugMessage "Model is $model"
+
+# Set the ouput file name
+DATESTRING=$(date +%Y-%m-%d)
+outFile=driveCheckInfo.$model.$serial.$DATESTRING.txt
+rm $outFile > /dev/null 2>&1
+
+
+# *** Print the output ***
+
+
+# Print the basic device info
+printSection "$DRIVE_INFO" "Basic Device Information"
+
+# Print the usage info
+ATTRIBUTES=$(smartctl -A $1)
+USAGE=$(echo "$ATTRIBUTES" | grep Power_On_Hours; echo "$ATTRIBUTES" | grep Head_Flying_Hours; echo "$ATTRIBUTES" | grep Offline_Uncorrectable)
+printSection "$USAGE" "Device Usage"
+
+# Print the health report
+HEALTH=$(smartctl -H $1)
+printSection "$HEALTH" "Health Report"
+
+# Print the error log
+ERROR_LOG=$(smartctl -l error $1)
+printSection "$ERROR_LOG" "Error Log"
+
+# Print the self test log
+SELF_TEST_LOG=$(smartctl -l selftest $1)
+printSection "$SELF_TEST_LOG" "Self Test Log"
+
+# Print the partition table
+PARTITION_TABLE=$(fdisk -l $1)
+printSection "$PARTITION_TABLE" "Partition Table"
+
+# Print the full device info
+FULL_INFO=$(smartctl -x $1)
+printSection "$FULL_INFO" "Full Device Info"
+
+# View output
+less $outFile
+
+echo "Output written to $outFile"

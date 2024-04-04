@@ -1,0 +1,34 @@
+#!/bin/bash
+
+function getrandom() {
+	number=$((RANDOM % $1))
+	echo $number
+}
+
+function getbar {
+	# Initialise the line
+	thisbar=( sn8 sn8 sn8 sn8 sn8 sn8 sn8 sn8 )
+
+	# Alter the first note
+	number1=$(getrandom 8)
+	thisbar[$number1]='sn8->'
+
+	# Make sure the second number is different to the first
+	number2=$(getrandom 7)
+	while [ $number1 == $number2 ]; do
+		number2=$(getrandom 7)
+	done
+	
+	# Alter the second note
+	thisbar[$number2]='sn8->'
+
+	# Return the generated line
+	echo ${thisbar[*]}
+}
+
+counter=0
+total_bars=59
+while [ $counter -lt $total_bars ]; do
+	getbar
+	counter=$[ $counter + 1 ]
+done

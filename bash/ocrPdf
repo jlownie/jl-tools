@@ -1,0 +1,37 @@
+# !/bin/bash -v
+
+imageFilePrefix=ocrPdfPage
+cuneiformOut=cuneiform-out.txt
+pdfTextFile=pdfContents.txt
+
+function printusage ()
+{
+	echo "Usage: $0 <pdf name>"
+}
+
+# Validate input
+if [ -z "$1" ]; then
+	printusage
+	exit
+else
+	pdfTextFile=$(echo $1 | sed s/\\.pdf/\\.txt/)
+	echo "Output file is $pdfTextFile"
+fi
+
+# Initialise the output file
+rm $pdfTextFile
+touch $pdfTextFile
+
+# Extract the images
+pdfimages $1 $imageFilePrefix
+
+# Ocr the images
+for imageFile in $(ls $imageFilePrefix*); do
+	echo Processing $imageFile
+	cuneiform $imageFile &>/dev/null
+	cat $cuneiformOut >> $pdfTextFile
+done
+
+# Cleanup
+rm $imageFilePrefix*
+rm $cuneiformOut
