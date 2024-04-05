@@ -1,1 +1,5 @@
-cat "$1" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$2"
+txtname=$1
+mp3name=$(echo $txtname | sed 's/txt/mp3/')
+echo Input: $txtname
+echo Output: $mp3name
+cat "$txtname" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$mp3name"
