@@ -1,3 +1,10 @@
+# Check arguments
+if [ -z "$1" ]; then
+	printf "\nUsage: $0 <path to pdf file to convert>\n\n"
+	exit
+fi
+
+# Create the file
 txtname=$1
 mp3name=$(echo $txtname | sed 's/txt/mp3/')
 echo Input: $txtname
