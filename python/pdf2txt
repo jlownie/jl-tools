@@ -6,6 +6,7 @@
 # source /home/jlownie/james/code/venv_python/bin/activate
 import os.path
 import io
+import argparse
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -22,6 +23,9 @@ def main():
   """Shows basic usage of the Drive v3 API.
   Prints the names and ids of the first 10 files the user has access to.
   """
+  
+  args=parseArgs()
+  
   creds = None
   # The file token.json stores the user's access and refresh tokens, and is
   # created automatically when the authorization flow completes for the first
@@ -44,11 +48,14 @@ def main():
   service = build("drive", "v3", credentials=creds)
   
   # Prepare the parameters
-  pdffile = '/home/jlownie/jlGdrivemnt/Study/Harvard VPAL Cybersecurity - Risk/Module 7/HAR CYB M7U1 Notes.pdf'  # PDF file
-  txtfile = 'output.txt'  # Text file
+  pdffile = args.pdfname # PDF file
+  logmsg('Input file: ' + pdffile)
+  txtfile = pdffile.removesuffix('.pdf') + '.txt' # Text file
+  logmsg('Output file: ' + txtfile)
   mime = 'application/vnd.google-apps.document'
   
   # Call the Drive v3 API
+  logmsg('Uploading file')
   res = service.files().create(
   	body={
   		'name': pdffile,
@@ -57,6 +64,7 @@ def main():
   	media_body=MediaFileUpload(pdffile, mimetype=mime, resumable=True)
   ).execute()
   
+  logmsg('Downloading file')
   dl = MediaIoBaseDownload(
   	io.FileIO(txtfile, 'wb'),
   	service.files().export_media(fileId=res['id'], mimeType="text/plain")
@@ -64,7 +72,18 @@ def main():
   done = False
   while done is False:
   	status, done = dl.next_chunk()
-  print("Done.")  
+  logmsg("Done")
+
+def logmsg( msg ):
+  print(msg)
+
+# Parses command line parameters and returns them
+def parseArgs():
+  parser = argparse.ArgumentParser(
+      prog='pdf2txt',
+      description='Converts PDFs to TXT files')
+  parser.add_argument('pdfname', help="The path to the PDF file to be converted")
+  return parser.parse_args()
 
 if __name__ == "__main__":
   main()
