@@ -4,6 +4,9 @@
 
 # For the imports to work you must do this before running the script:
 # source /home/jlownie/james/code/venv_python/bin/activate
+
+# Credentials are stored in /etc/pdf2txt, this dir must exist
+
 import os.path
 import io
 import argparse
@@ -18,6 +21,7 @@ from apiclient.http import MediaFileUpload, MediaIoBaseDownload
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
+credentials_path="/etc/pdf2txt/pdf2txt_credentials.json"
 
 def main():
   """Shows basic usage of the Drive v3 API.
@@ -38,7 +42,7 @@ def main():
       creds.refresh(Request())
     else:
       flow = InstalledAppFlow.from_client_secrets_file(
-          "pdf2txt_credentials.json", SCOPES
+          credentials_path, SCOPES
       )
       creds = flow.run_local_server(port=0)
     # Save the credentials for the next run
