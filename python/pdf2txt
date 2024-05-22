@@ -1,6 +1,7 @@
 #!/mnt/linuxdata/james/code/venv_python/bin/python
 # Copied from https://stackoverflow.com/questions/43713924/how-to-extract-pdf-content-into-txt-file-with-google-docs
 # Credit to tanaike
+# Python library documentation: https://googleapis.github.io/google-api-python-client/docs/epy/index.html
 
 # For the imports to work you must do this before running the script:
 # source /home/jlownie/james/code/venv_python/bin/activate
@@ -18,28 +19,30 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from apiclient.http import MediaFileUpload, MediaIoBaseDownload
 
-# If modifying these scopes, delete the file token.json.
+# Scopes are the permissions requested by the app.  If you have modified them (eg, in the Google API web console), delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
+# This file stores the credentials used to login.  It is created automatically.
 credentials_path="/etc/pdf2txt/pdf2txt_credentials.json"
-token_path="/etc/pdf2txt/token.json"
 
-def main():
-  """Shows basic usage of the Drive v3 API.
-  Prints the names and ids of the first 10 files the user has access to.
-  """
-  
-  args=parseArgs()
-  
-  creds = None
   # The file token.json stores the user's access and refresh tokens, and is
   # created automatically when the authorization flow completes for the first
   # time.
+token_path="/etc/pdf2txt/token.json"
+
+def main():  
+  # Parse command line arguments
+  args=parseArgs()
+  
+  # Authentication
+  creds = None
   if os.path.exists(token_path):
     creds = Credentials.from_authorized_user_file(token_path, SCOPES)
   # If there are no (valid) credentials available, let the user log in.
   if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
+      # First delete token.json, as it confuses it sometimes
+      os.remove(token_path)
       creds.refresh(Request())
     else:
       flow = InstalledAppFlow.from_client_secrets_file(
@@ -59,16 +62,19 @@ def main():
   logmsg('Output file: ' + txtfile)
   mime = 'application/vnd.google-apps.document'
   
-  # Call the Drive v3 API
+  # Upload the PDF file
   logmsg('Uploading file')
-  res = service.files().create(
+  fileCreateTransaction = service.files().create(
   	body={
   		'name': pdffile,
   		'mimeType': mime
   	},
   	media_body=MediaFileUpload(pdffile, mimetype=mime, resumable=True)
-  ).execute()
+  )
+  res = fileCreateTransaction.execute()
+  logmsg("Done")
   
+  # Download the txt file
   logmsg('Downloading file')
   dl = MediaIoBaseDownload(
   	io.FileIO(txtfile, 'wb'),
@@ -77,6 +83,12 @@ def main():
   done = False
   while done is False:
   	status, done = dl.next_chunk()
+  logmsg("Done")
+
+  # Delete the file from Drive  
+  logmsg("Deleting file")
+  deletion_json = {'trashed': True}
+  response = service.files().update(fileId=res['id'], body=deletion_json).execute()
   logmsg("Done")
 
 def logmsg( msg ):
