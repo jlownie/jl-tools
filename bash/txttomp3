@@ -2,7 +2,7 @@
 
 # Check arguments
 if [ -z "$1" ]; then
-	printf "\nUsage: $0 <path to pdf file to convert>\n\n"
+	printf "\nUsage: $0 <path to text file to convert>\n\n"
 	exit
 fi
 
