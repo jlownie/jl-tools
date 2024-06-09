@@ -1,12 +1,22 @@
+# This script takes a text file and creates an MP3 using text to speech
+
 # Check arguments
 if [ -z "$1" ]; then
 	printf "\nUsage: $0 <path to pdf file to convert>\n\n"
 	exit
 fi
 
-# Create the file
+# Prepare the names
 txtname=$1
-mp3name=$(echo $txtname | sed 's/txt/mp3/')
 echo Input: $txtname
+mp3name=$(echo $txtname | sed 's/txt/mp3/')
 echo Output: $mp3name
-cat "$txtname" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$mp3name"
+tempfilename=/tmp/$(basename "$mp3name")
+echo Output: $mp3name
+
+# Create the mp3 in the local tmp dir
+cat "$txtname" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$tempfilename"
+
+# Copy that mp3 to the source dir and the "for phone" dir
+cp "$tempfilename" "$mp3name"
+cp "$tempfilename" "/home/jlownie/Downloads/for phone/Podcasts/"
