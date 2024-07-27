@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Script for testing how Nemo passes arguments to scripts
+
+function logmsg()
+{
+	echo $@ >> /tmp/testIntegration
+}
+
+# Initialise
+rm /tmp/testIntegration
+
+# First test
+logmsg "Args are: $@"
+logmsg "\$1 is: $1"
+
+# Test stepping through args
+if [[ $1 -eq nemo ]]; then
+	shift
+	counter=0
+	while [[ $# -gt 0 ]]; do
+		counter=$((counter + 1))
+		echo "Counter is: $counter" >> /tmp/testIntegration
+		shift
+	done
+fi
