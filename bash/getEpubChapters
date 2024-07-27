@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Based on this: https://stackoverflow.com/questions/11313852/split-one-file-into-multiple-files-based-on-delimiter
+
+# Trace output
+#set -x
+
+# Check arguments
+if [ -z "$1" ]; then
+	printf "\nUsage: $0 <path to .epub file to extract text from>\n\n"
+	exit
+fi
+
+# Determine file names
+fullpath=$(realpath "$1")
+srcfilename=$(basename "$fullpath")
+outputname=$(echo $srcfilename | sed 's/.epub//')
+txtname=$outputname.txt
+transformedname=$outputname.transformed.txt
+
+echo -e "Exporting $srcfilename to $txtname\n"
+
+# Get the text of the book
+ebook-convert $srcfilename $txtname --chapter-mark rule
+
+# Transform chapter breaks into a single-line pattern
+echo -e "\nReplacing chapter breaks\n"
+sed -f getEpubChapters_replacepagebreaks $txtname > $transformedname
+
+# Extract individual chapters
+echo -e "\nExtracting chapters\n"
+gawk -v filename=$outputname -f getEpubChapters_splitfile RS='######' $transformedname

@@ -1,0 +1,6 @@
+# Awk script
+{
+	filenum=sprintf("%02i", NR)
+	f=filename ".chapter" filenum ".txt"
+	print $0 > f
+}

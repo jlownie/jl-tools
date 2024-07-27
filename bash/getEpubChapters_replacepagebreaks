@@ -1,0 +1,15 @@
+# Sed script
+/^* * */{
+N
+N
+N
+N
+N
+N
+N
+N
+N
+N
+N
+s/\* \* \*\n\n\n\n\n\n\* \* \*\n\n\n\n\n/######/
+}
