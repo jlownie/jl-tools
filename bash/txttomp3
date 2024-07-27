@@ -6,17 +6,20 @@ if [ -z "$1" ]; then
 	exit
 fi
 
-# Prepare the names
-txtname=$1
-echo Input: $txtname
-mp3name=$(echo $txtname | sed 's/txt/mp3/')
-echo Output: $mp3name
-tempfilename=/tmp/$(basename "$mp3name")
-echo Output: $mp3name
+# Process all files
+for file in $@; do
+	# Prepare the names
+	txtname=$file
+	echo Input: $txtname
+	mp3name=$(echo $txtname | sed 's/txt/mp3/')
+	echo Output: $mp3name
+	tempfilename=/tmp/$(basename "$mp3name")
+	echo Output: $mp3name
 
-# Create the mp3 in the local tmp dir
-cat "$txtname" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$tempfilename"
+	# Create the mp3 in the local tmp dir
+	cat "$txtname" | /usr/local/src/piper/piper --model /usr/local/src/piper/voices/en_US-libritts-high.onnx --output_raw --sentence_silence 0.1 | lame -r -m m -s 22.05 --bitwidth 16 --signed --little-endian - "$tempfilename"
 
-# Copy that mp3 to the source dir and the "for phone" dir
-cp "$tempfilename" "$mp3name"
-cp "$tempfilename" "/home/jlownie/Downloads/for phone/Podcasts/"
+	# Copy that mp3 to the source dir and the "for phone" dir
+	cp "$tempfilename" "$mp3name"
+	cp "$tempfilename" "/home/jlownie/Downloads/for phone/Podcasts/"
+done
