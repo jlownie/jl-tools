@@ -1,13 +1,15 @@
 # This script takes a text file and creates an MP3 using text to speech
 
 # Check arguments
-if [ -z "$1" ]; then
+if [ $# -eq 0 ]; then
 	printf "\nUsage: $0 <path to text file to convert>\n\n"
 	exit
 fi
 
 # Process all files
-for file in $@; do
+while [ $# -gt 0 ]; do
+	file=$1
+	shift
 	# Prepare the names
 	txtname=$file
 	echo Input: $txtname
