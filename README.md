@@ -1,0 +1,1 @@
+Nemo files go into `~/.local/share/nemo/actions`.
