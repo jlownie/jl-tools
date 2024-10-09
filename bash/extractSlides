@@ -1,0 +1,52 @@
+# Extract a slide from a screenshot from a webinar (must be in PNG format) and run text detection on it
+
+# $1 specifies the location and dimension of the slide in the format '<width>x<height>+<x offset (from top left corner)>+<y offset>'
+# Eg, for an area 672px x 376px starting 173px from top left corner use this 
+# '672x376+0+173'
+# For details of the format of this string go to file:///usr/share/doc/ImageMagick-7/www/command-line-processing.html#geometry
+
+# Image and text files are created in the subdirectory './cropped'
+
+outdir=cropped
+textdir=text
+slideText="$outdir/Slideshow text.txt"
+geometry="$1"
+
+# Prepare
+rm -rf $outdir
+mkdir $outdir
+rm -rf $textdir
+mkdir $textdir
+
+# Crop the file
+counter=0
+for file in *.png; do 
+	counter=$(( $counter + 1 ))
+	counterstring=$(printf "%02i" $counter)
+	echo "Extracting image from $file"
+	magick "$file" -crop "$geometry" "$outdir/Slide $counterstring.png"
+done
+
+# This stops Tesseract from crashing my PC
+export OMP_THREAD_LIMIT=1
+
+# Do text recognition
+for file in $outdir/*.png; do
+	# Work out the base name of the file
+	base_name=$textdir/$(basename "$file" .png)
+
+	# Run tesseract
+	echo "Extracting text from $file to $base_name"
+	tesseract "$file" "$base_name"
+done
+
+# Consolidate all the text from the slides
+rm "$slideText"
+counter=0
+for file in $textdir/*.txt; do
+	counter=$(( $counter + 1 ))
+	echo >> "$slideText"
+	echo "# Slide $counter" >> "$slideText"
+	echo >> "$slideText"
+	cat "$file" >> "$slideText"
+done
