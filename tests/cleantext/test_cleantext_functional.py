@@ -1,3 +1,5 @@
+# This script contains functional tests for cleantext
+
 import unittest
 from tests.cleantext.testing_framework import runCleanText
 
