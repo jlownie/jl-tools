@@ -10,8 +10,8 @@ def parseArgs():
         description='Prepares a text for rendering to MP3 by removing problematic text')
     parser.add_argument('file', help="The path to the text file to be cleaned")
     parser.add_argument('output', help="The file that the cleaned text will be output to", nargs='?', default=None)
-    parser.add_argument('--urls', help="Remove URLs", default=True)
-    parser.add_argument('--markup', help="Remove characters commonly left in text from web pages (such as * and /)", default=True)
+    parser.add_argument('--urls', help="Remove URLs", default="True")
+    parser.add_argument('--markup', help="Remove characters commonly left in text from web pages (such as * and /)", default="True")
     return parser.parse_args()
 
 def removeRegex (text, pattern_to_remove, multiline=False):
@@ -27,7 +27,9 @@ def removeRegex (text, pattern_to_remove, multiline=False):
 # Remove '*' and '/'
 def removeMarkup(text):
     # Remove forward slashes at the start of a line
-    removeRegex(text, r'$/')
+    modifiedtext=removeRegex(text, r'//')
+
+    return modifiedtext
 
 # For future use (not currently used) removing duplicate lines from files, useful when removing a header/footer
 def getDuplicates(args):
@@ -56,33 +58,33 @@ def getDuplicates(args):
 def logmsg(message):
     print(message)
 
-def main():  
-    # Parse command line arguments
-    args=parseArgs()
-
+def main(args):  
     if args.file != None:
         # Read the content of the file
         with open(args.file, 'r') as file:
             content = file.read()
 
-        if args.urls:
+        if args.urls=="True":
             # Remove URLs
-            modified_content = removeRegex(content, r'<http.*?>', multiline=True)
+            content=removeRegex(content, r'<http.*?>', multiline=True)
         
-        if args.markup:
+        if args.markup=="True":
             # Remove '*' and '/'
-            removeMarkup(content)
+            content=removeMarkup(content)
 
         # Write the output file
         if args.output==None:
-            outfile=args.file + ".cleaned.txt"
+            namestem=removeRegex(args.file, r".txt$")
+            outfile=namestem + ".cleaned.txt"
         else:
             outfile=args.output
         logmsg( "Writing cleaned text to " + outfile)
 
-
         with open(outfile, 'w') as file:
-            file.write(modified_content)
+            file.write(content)
 
 if __name__ == "__main__":
-  main()
+    # Parse command line arguments
+    args=parseArgs()
+
+    main(args)
