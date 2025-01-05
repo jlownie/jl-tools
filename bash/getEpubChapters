@@ -3,7 +3,7 @@
 # Based on this: https://stackoverflow.com/questions/11313852/split-one-file-into-multiple-files-based-on-delimiter
 
 # Trace output
-#set -x
+set -x
 
 # Check arguments
 if [ -z "$1" ]; then
@@ -11,22 +11,32 @@ if [ -z "$1" ]; then
 	exit
 fi
 
+# Get the directory that the script is running in - from stackexchange - https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # Determine file names
 fullpath=$(realpath "$1")
 srcfilename=$(basename "$fullpath")
-outputname=$(echo $srcfilename | sed 's/.epub//')
-txtname=$outputname.txt
-transformedname=$outputname.transformed.txt
+outputname=$(echo "$srcfilename" | sed 's/.epub//')
+txtname="$outputname.txt"
+transformedname="$outputname.transformed.txt"
 
 echo -e "Exporting $srcfilename to $txtname\n"
 
 # Get the text of the book
-ebook-convert $srcfilename $txtname --chapter-mark rule
+ebook-convert "$srcfilename" "$txtname" --chapter-mark rule
 
 # Transform chapter breaks into a single-line pattern
 echo -e "\nReplacing chapter breaks\n"
-sed -f getEpubChapters_replacepagebreaks $txtname > $transformedname
+sed -f "$SCRIPT_DIR/getEpubChapters_replacepagebreaks" "$txtname" > "$transformedname"
 
 # Extract individual chapters
 echo -e "\nExtracting chapters\n"
-gawk -v filename=$outputname -f getEpubChapters_splitfile RS='######' $transformedname
+gawk -v filename="$outputname" -f "$SCRIPT_DIR/getEpubChapters_splitfile" RS='######' "$transformedname"
+
+# run cleanText on the output
+echo -e "\nCleaning text files\n"
+find -name "$outputname.chapter??.txt" -execdir python "$SCRIPT_DIR/../python/cleantext.py" '{}' \;
+#for file in $(ls "$outputname.chapter"??.txt); do
+#	python "$SCRIPT_DIR/../python/cleantext.py" "$file"
+#done
