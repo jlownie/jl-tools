@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # Based on this: https://stackoverflow.com/questions/11313852/split-one-file-into-multiple-files-based-on-delimiter
+# Depends upon ebook-convert (from Calibre)
+# Puts intermediate files into /tmp/<input file name>
 
 # Trace output
-set -x
+#set -x
+
+function logmsg() {
+	echo -e "$1" >> "$logfile"
+	echo -e $1
+}
 
 # Check arguments
 if [ -z "$1" ]; then
@@ -14,29 +21,34 @@ fi
 # Get the directory that the script is running in - from stackexchange - https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Determine file names
+# Determine file names and paths
 fullpath=$(realpath "$1")
 srcfilename=$(basename "$fullpath")
+srcdir=$(dirname "$fullpath")
 outputname=$(echo "$srcfilename" | sed 's/.epub//')
-txtname="$outputname.txt"
-transformedname="$outputname.transformed.txt"
+tmpdir="/tmp/$outputname"
+txtname="$tmpdir/$outputname.txt"
+transformedname="$tmpdir/$outputname.transformed.txt"
+logfile="$tmpdir/log.txt"
 
-echo -e "Exporting $srcfilename to $txtname\n"
+# Initialisation
+mkdir "$tmpdir"
+rm "$logfile"
+touch "$logfile"
+
+logmsg "Exporting $1 to $txtname\n"
 
 # Get the text of the book
-ebook-convert "$srcfilename" "$txtname" --chapter-mark rule
+ebook-convert "$1" "$txtname" --chapter-mark rule
 
 # Transform chapter breaks into a single-line pattern
-echo -e "\nReplacing chapter breaks\n"
+logmsg "\nReplacing chapter breaks\n"
 sed -f "$SCRIPT_DIR/getEpubChapters_replacepagebreaks" "$txtname" > "$transformedname"
 
 # Extract individual chapters
-echo -e "\nExtracting chapters\n"
-gawk -v filename="$outputname" -f "$SCRIPT_DIR/getEpubChapters_splitfile" RS='######' "$transformedname"
+logmsg "\nExtracting chapters\n"
+gawk -v filename="$tmpdir/$outputname" -f "$SCRIPT_DIR/getEpubChapters_splitfile" RS='######' "$transformedname"
 
 # run cleanText on the output
-echo -e "\nCleaning text files\n"
-find -name "$outputname.chapter??.txt" -execdir python "$SCRIPT_DIR/../python/cleantext.py" '{}' \;
-#for file in $(ls "$outputname.chapter"??.txt); do
-#	python "$SCRIPT_DIR/../python/cleantext.py" "$file"
-#done
+logmsg "\nCleaning text files in $tmpdir and writing output to $srcdir\n"
+find "$tmpdir" -name "$outputname.chapter??.txt" -execdir python "$SCRIPT_DIR/../python/cleantext.py" '{}' "$srcdir/{}" \;
